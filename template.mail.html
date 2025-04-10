@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Template mail</title>
+  <style>
+    /* Общие стили письма */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      color: #333;
+    }
+    .container {
+      max-width: 600px;
+      margin: 30px auto;
+      background-color: #ffffff;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .header {
+      background-color: #74d474;
+      padding: 20px;
+      text-align: center;
+      color: #ffffff;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+    .content {
+      padding: 20px;
+      line-height: 1.6;
+      font-size: 16px;
+    }
+    .content p {
+      margin: 0 0 15px;
+    }
+    .footer {
+      background-color: #ecf0f1;
+      text-align: center;
+      padding: 15px;
+      font-size: 12px;
+      color: #777777;
+    }
+    a {
+      color: #3498db;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Шапка письма -->
+    <div class="header">
+      <h1>Название Компании</h1>
+    </div>
+    
+    <!-- Основной контент письма -->
+    <div class="content">
+      <!-- Вставьте сюда тело письма -->
+      {BODY_CONTENT}
+    </div>
+    
+    <!-- Подвал письма -->
+    <div class="footer">
+      <p>Если у вас возникли вопросы, свяжитесь с нами по <a href="mailto:contact@example.com">contact@example.com</a></p>
+      <p>&copy; 2025 Название Компании. Все права защищены.</p>
+    </div>
+  </div>
+</body>
+</html>
