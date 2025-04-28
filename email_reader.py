@@ -29,11 +29,33 @@ if 'Logging' in config:
         format=log_cfg.get('format', "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     )
 else:
-    # Дефолтное логирование
     logging.basicConfig(
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         level=logging.INFO
     )
+
+
+def _get_config_option(cfg, key, fallback=None, cast_func=None):
+    """
+    Читает опцию из секции cfg, подставляя значение из переменной окружения
+    если значение имеет формат ${ENV_VAR}. Применяет cast_func к результату, если указано.
+    """
+    raw = cfg.get(key, fallback=None)
+    if raw is None:
+        raw = fallback
+    # Проверяем синтаксис ${VAR}
+    if isinstance(raw, str) and raw.startswith('${') and raw.endswith('}'):
+        env_key = raw[2:-1]
+        val = os.getenv(env_key, fallback)
+    else:
+        val = raw
+    if cast_func and val is not None:
+        try:
+            return cast_func(val)
+        except Exception:
+            logging.getLogger().warning("Не удалось привести опцию %s к нужному типу", key)
+            return fallback
+    return val
 
 class EmailBoxReader:
     """
@@ -41,40 +63,38 @@ class EmailBoxReader:
     Настройки подключения и состояния читаются из config.properties.
 
     Пример config.properties:
-    [IMAP]
-    host = imap.example.com
-    username = user@example.com
-    password = secret
-    mailbox = INBOX          # необязательно, дефолт INBOX
-    port = 993               # необязательно, дефолт 993
-    use_ssl = True           # необязательно, дефолт True
-    state_file = last_uid.txt  # необязательно
-
     [Logging]
-    file = app.log          # файл для логов, если отсутствует - в консоль
-    level = INFO            # уровень логов
+    file = app.log
+    level = INFO
     format = %(asctime)s - %(name)s - %(levelname)s - %(message)s
+
+    [IMAP]
+    host = ${IMAP_HOST}       # берется из переменной окружения IMAP_HOST
+    username = user@example.com
+    password = ${IMAP_PASS}    # из переменной окружения IMAP_PASS
+    mailbox = INBOX
+    port = 993
+    use_ssl = True
+    state_file = last_uid.txt
 
     Шаблон темы:
     [Тип события][значение] текст [Служебная информация] текст
     """
     def __init__(self, section='IMAP'):
-        # Логгер класса
         self.logger = logging.getLogger(self.__class__.__name__)
-
-        # Конфигурация IMAP из глобального конфига
         if section not in config:
             self.logger.error("Секция '%s' не найдена в %s", section, config_file)
             raise ValueError(f"Секция '{section}' не найдена в {config_file}")
         cfg = config[section]
 
-        self.host = cfg.get('host')
-        self.username = cfg.get('username')
-        self.password = cfg.get('password')
-        self.mailbox = cfg.get('mailbox', fallback='INBOX')
-        self.port = cfg.getint('port', fallback=993)
-        self.use_ssl = cfg.getboolean('use_ssl', fallback=True)
-        self.state_file = cfg.get('state_file', fallback='last_uid.txt')
+        # Чтение с учётом переменных окружения
+        self.host = _get_config_option(cfg, 'host')
+        self.username = _get_config_option(cfg, 'username')
+        self.password = _get_config_option(cfg, 'password')
+        self.mailbox = _get_config_option(cfg, 'mailbox', fallback='INBOX')
+        self.port = _get_config_option(cfg, 'port', fallback=993, cast_func=int)
+        self.use_ssl = _get_config_option(cfg, 'use_ssl', fallback=True, cast_func=lambda x: cfg._convert_to_boolean(x))
+        self.state_file = _get_config_option(cfg, 'state_file', fallback='last_uid.txt')
 
         self.last_uid = self._load_last_uid()
         self.conn = None
@@ -205,9 +225,9 @@ if __name__ == '__main__':
 # format = %(asctime)s - %(name)s - %(levelname)s - %(message)s
 #
 # [IMAP]
-# host = imap.example.com
+# host = ${IMAP_HOST}
 # username = user@example.com
-# password = secret
+# password = ${IMAP_PASS}
 # mailbox = INBOX
 # port = 993
 # use_ssl = True
