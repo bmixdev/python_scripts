@@ -196,3 +196,19 @@ if __name__ == '__main__':
             print(f"UID: {uid}, Subject Info: {info}")
     finally:
         reader.logout()
+
+# Пример содержимого config.properties
+# -------------------------------
+# [Logging]
+# file = app.log
+# level = INFO
+# format = %(asctime)s - %(name)s - %(levelname)s - %(message)s
+#
+# [IMAP]
+# host = imap.example.com
+# username = user@example.com
+# password = secret
+# mailbox = INBOX
+# port = 993
+# use_ssl = True
+# state_file = last_uid.txt
