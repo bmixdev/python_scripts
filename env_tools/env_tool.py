@@ -63,3 +63,9 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# python3 env_tool.py set VERSION 1.2.3     # добавление/обновление
+# python3 env_tool.py get VERSION           # чтение значения
+# python3 env_tool.py del VERSION           # удаление переменной
+# python3 env_tool.py list                  # показать все
+
