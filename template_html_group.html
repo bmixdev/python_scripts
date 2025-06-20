@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Группа компонентов</title>
+  <style>
+    .group-box {
+      border: 2px solid #888;
+      border-radius: 10px;
+      padding: 15px 20px;
+      margin: 20px auto;
+      width: 300px;
+      font-family: sans-serif;
+      box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .group-box-title {
+      font-weight: bold;
+      font-size: 1.1em;
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 14px;
+      color: #444;
+    }
+
+    .form-control {
+      width: 100%;
+      margin-bottom: 15px;
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-sizing: border-box;
+    }
+
+    .form-checkbox {
+      margin-bottom: 15px;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 8px 12px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .btn:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+
+<div class="group-box">
+  <div class="group-box-title">Настройки пользователя</div>
+  
+  <label for="username">Имя пользователя:</label>
+  <input type="text" id="username" class="form-control" placeholder="Введите имя">
+  
+  <label class="form-checkbox">
+    <input type="checkbox" id="notify">
+    Включить уведомления
+  </label>
+  
+
+    <label for="username2">Имя пользователя2:</label>
+  <input type="text" id="username2" class="form-control" placeholder="Введите имя">
+  
+
+  <button class="btn">Сохранить</button>
+</div>
+
+</body>
+</html>
