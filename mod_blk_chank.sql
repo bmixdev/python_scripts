@@ -151,3 +151,80 @@ BEGIN
     END LOOP;
 END;
 $$;
+
+CREATE OR REPLACE FUNCTION get_ctid_thread_batches(
+    p_table         regclass,   -- имя таблицы, напр. 'public.my_table'::regclass
+    p_num_threads   integer,    -- число потоков
+    p_batch_size    integer     -- размер пачки (по числу строк)
+)
+RETURNS TABLE(
+    thread_idx  integer,   -- 0…p_num_threads-1
+    tid_start   tid,       -- inclusive
+    tid_end     tid        -- exclusive
+)
+LANGUAGE plpgsql AS
+$$
+DECLARE
+    total_rows      bigint;
+    rows_per_thr    bigint;
+    thr             integer;
+    thr_start_off   bigint;
+    thr_end_off     bigint;
+    batch_start_off bigint;
+    batch_end_off   bigint;
+BEGIN
+    IF p_num_threads < 1 OR p_batch_size < 1 THEN
+        RAISE EXCEPTION 'p_num_threads and p_batch_size must be >= 1';
+    END IF;
+
+    -- 1) Общее число строк
+    EXECUTE format('SELECT count(*) FROM %s', p_table)
+    INTO total_rows;
+    IF total_rows = 0 THEN
+        RETURN;  -- пустая таблица
+    END IF;
+
+    -- 2) Сколько строк приходится на каждый поток
+    rows_per_thr := CEIL(total_rows::numeric / p_num_threads)::bigint;
+
+    -- 3) Перебираем потоки
+    FOR thr IN 0 .. p_num_threads - 1 LOOP
+        thr_start_off := thr * rows_per_thr;
+        thr_end_off   := LEAST(thr_start_off + rows_per_thr - 1, total_rows - 1);
+
+        -- если для этого потока ничего нет — пропускаем
+        IF thr_start_off > thr_end_off THEN
+            CONTINUE;
+        END IF;
+
+        -- 4) Дробим поток на пачки
+        batch_start_off := thr_start_off;
+        WHILE batch_start_off <= thr_end_off LOOP
+            batch_end_off := LEAST(batch_start_off + p_batch_size - 1, thr_end_off);
+
+            -- находим границы по ctid:
+            -- tid_start — ctid строки под OFFSET batch_start_off
+            EXECUTE format(
+              'SELECT ctid FROM %1$s ORDER BY id OFFSET %2$s LIMIT 1',
+              p_table, batch_start_off
+            ) INTO tid_start;
+            -- tid_end — ctid строки под OFFSET (batch_end_off+1), либо "конец"
+            IF batch_end_off < thr_end_off THEN
+                EXECUTE format(
+                  'SELECT ctid FROM %1$s ORDER BY id OFFSET %2$s LIMIT 1',
+                  p_table, batch_end_off + 1
+                ) INTO tid_end;
+            ELSE
+                tid_end := '(4294967295,0)'::tid;
+            END IF;
+
+            -- возвращаем одну запись диапазона
+            thread_idx := thr;
+            RETURN NEXT;
+
+            -- переходим к следующей пачке
+            batch_start_off := batch_end_off + 1;
+        END LOOP;
+    END LOOP;
+END;
+$$;
