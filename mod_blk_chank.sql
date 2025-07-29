@@ -228,3 +228,44 @@ BEGIN
     END LOOP;
 END;
 $$;
+
+CREATE OR REPLACE FUNCTION split_bigint_array(
+    p_input      bigint[],
+    p_batch_size integer
+)
+RETURNS SETOF bigint[] 
+LANGUAGE plpgsql AS
+$$
+DECLARE
+    total_len integer;
+    i         integer;
+    chunk     bigint[];
+BEGIN
+    -- Длина входного массива
+    total_len := coalesce(array_length(p_input, 1), 0);
+    IF total_len = 0 OR p_batch_size < 1 THEN
+        RETURN;
+    END IF;
+
+    -- Бежим с шагом p_batch_size по массиву
+    i := 1;
+    WHILE i <= total_len LOOP
+        -- Формируем подмассив от i до min(i+p_batch_size-1, total_len)
+        chunk := p_input[i:LEAST(i + p_batch_size - 1, total_len)];
+        RETURN NEXT chunk;
+        i := i + p_batch_size;
+    END LOOP;
+END;
+$$;
+Как пользоваться
+sql
+Копировать
+Редактировать
+-- Пример: разбить большой массив на куски по 3 элемента
+SELECT *
+FROM split_bigint_array(ARRAY[10,20,30,40,50,60,70]::bigint[], 3);
+
+-- Результат:
+--  {10,20,30}
+--  {40,50,60}
+--  {70}
